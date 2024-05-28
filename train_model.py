@@ -5,6 +5,7 @@ from pathlib import Path
 def main():
     model = SegmentationModel(
         data_path=Path("/home/fabio/Data/comma10k"),
+        logs_path=Path("/home/fabio/Repos/driving-sem-seg/logs"),
         backbone="efficientnet-b4",
         batch_size=10,
     )

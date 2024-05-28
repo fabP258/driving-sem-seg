@@ -2,7 +2,6 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-import random
 from typing import Union, List
 import segmentation_models_pytorch as smp
 from data_handling import SegmentationDataset
@@ -15,6 +14,7 @@ class SegmentationModel:
     def __init__(
         self,
         data_path: Union[str, Path],
+        logs_path: Union[str, Path],
         backbone: str = "efficientnet-b0",
         batch_size: int = 16,
         lr: float = 1e-4,
@@ -26,6 +26,8 @@ class SegmentationModel:
         class_values: List[int] = [42, 76, 90, 124, 161],
     ):
         self.data_path = Path(data_path)
+        Path(logs_path).mkdir(parents=True, exist_ok=True)
+        self.logs_path = logs_path
         self.backbone = backbone
         self.batch_size = batch_size
         self.lr = lr
@@ -165,8 +167,8 @@ class SegmentationModel:
                     fig, ax = plt.subplots()
                     ax.imshow(np.transpose(X_array[0, :, :, :], (1, 2, 0)))
                     ax.axis("off")
-                    ax.imshow(pred_mask, alpha=0.4)
-                    fig.savefig(f"/home/fabio/Repos/comma10k-re/logs/{str(epoch)}.png")
+                    ax.imshow(pred_mask, alpha=0.2, cmap="jet")
+                    fig.savefig(self.logs_path / f"{str(epoch)}.png")
 
         width, height = pred_mask.shape[0], pred_mask.shape[1]
         test_loss /= num_batches
@@ -176,6 +178,8 @@ class SegmentationModel:
             f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n"
         )
 
+        return test_loss
+
     def train(self):
         fig, ax = plt.subplots()
         ax.set_yscale("log")
@@ -184,18 +188,21 @@ class SegmentationModel:
 
         epochs = []
         train_errors = []
-        # valid_errors = []
+        valid_errors = []
         for t in range(self.epochs):
             print(f"Epoch {t+1}\n-------------------------------")
             train_loss = self.train_loop()
-            self.test_loop(t)
+            valid_loss = self.test_loop(t)
 
             # logging
             epochs.append(t)
             train_errors.append(train_loss)
+            valid_errors.append(valid_loss)
 
             if t % 5 == 0:
                 ax.scatter(epochs, train_errors, color="b")
-                fig.savefig(f"/home/fabio/Repos/comma10k-re/logs/loss_{str(t)}.png")
+                ax.scatter(epochs, valid_errors, color="r")
+                fig.savefig(self.logs_path / f"loss_{str(t)}.png")
                 epochs = []
                 train_errors = []
+                valid_errors = []

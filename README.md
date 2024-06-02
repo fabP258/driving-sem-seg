@@ -9,3 +9,14 @@ The repository builds on top of
 * Enable two-stage training for
   * pre-training on lower resolution
   * fine-tuning on full resolution
+* Add more image augmentations for training
+* Add ONNX model export after training
+
+## Experiments
+* **Baseline**: Two-step training without augmentations, no learning rate scheduler, efficientnet-b0 encoder, learning rate 1e-4
+* **Baseline + Augmentations**
+  * Aug1
+  * Aug2
+* **Baseline on bigger net**
+* **Hyperparameter studies**
+  * Variation of learning rate

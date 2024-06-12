@@ -166,29 +166,28 @@ class SegmentationModel:
         num_batches = len(self.valid_dataloader)
         test_loss, correct = 0, 0
 
-        with torch.no_grad():
-            for batch, (X, y) in enumerate(self.valid_dataloader):
-                X, y = X.to(self.device), y.to(self.device)
-                y_logits = self.net(X)
-                test_loss += self.loss_func(y_logits, y).item()
-                correct += (y_logits.argmax(1) == y).type(torch.float).sum().item()
+        for batch, (X, y) in enumerate(self.valid_dataloader):
+            X, y = X.to(self.device), y.to(self.device)
+            y_logits = self.net(X)
+            test_loss += self.loss_func(y_logits, y).item()
+            correct += (y_logits.argmax(1) == y).type(torch.float).sum().item()
 
-                if batch == 0:
-                    # convert tensors to np
-                    X_array = X.cpu().numpy()
-                    y_mask = y_logits.argmax(1)
-                    y_mask_array = y_mask.cpu().numpy()
+            if batch == 0:
+                # convert tensors to np
+                X_array = X.cpu().numpy()
+                y_mask = y_logits.argmax(1)
+                y_mask_array = y_mask.cpu().numpy()
 
-                    # convert first batch entry label to grayscale
-                    pred_mask = np.vectorize(self.valid_dataset.index_to_value.get)(
-                        y_mask_array[0, :, :]
-                    )
-                    fig, ax = plt.subplots()
-                    ax.imshow(np.transpose(X_array[0, :, :, :], (1, 2, 0)))
-                    ax.axis("off")
-                    ax.imshow(pred_mask, alpha=0.2, cmap="viridis")
-                    fig.savefig(self.logs_path / f"{str(epoch)}.png")
-                    plt.close(fig)
+                # convert first batch entry label to grayscale
+                pred_mask = np.vectorize(self.valid_dataset.index_to_value.get)(
+                    y_mask_array[0, :, :]
+                )
+                fig, ax = plt.subplots()
+                ax.imshow(np.transpose(X_array[0, :, :, :], (1, 2, 0)))
+                ax.axis("off")
+                ax.imshow(pred_mask, alpha=0.2, cmap="viridis")
+                fig.savefig(self.logs_path / f"{str(epoch)}.png")
+                plt.close(fig)
 
         width, height = pred_mask.shape[0], pred_mask.shape[1]
         test_loss /= num_batches

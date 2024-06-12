@@ -55,9 +55,6 @@ class SegmentationModel:
         )
         self.net.to(self.device)
 
-        self.loss_func = lambda x, y: torch.nn.CrossEntropyLoss()(
-            x, torch.argmax(y, axis=1)
-        )
         self.loss_func = torch.nn.CrossEntropyLoss()
 
     def update_image_size(self, image_size: tuple):

@@ -6,7 +6,7 @@ from typing import Union, List
 import segmentation_models_pytorch as smp
 from data_handling import SegmentationDataset
 import matplotlib.pyplot as plt
-import torch.nn.functional as F
+from image_augmentation import LightImageAugmentations, NoImageAugmentor
 
 
 class SegmentationModel:
@@ -18,7 +18,7 @@ class SegmentationModel:
         backbone: str = "efficientnet-b0",
         image_size: tuple = (576, 448),
         batch_size: int = 24,
-        num_workers: int = 12,
+        num_workers: int = 24,
         lr: float = 1e-4,
         eps: float = 1e-7,
         height: int = 14 * 32,
@@ -96,6 +96,7 @@ class SegmentationModel:
             mask_dir=self.data_path / "masks",
             file_names=set(train_file_names),
             image_size=self.image_size,
+            augmentor=LightImageAugmentations(),
         )
         self.train_dataloader = DataLoader(
             dataset=self.train_dataset,
@@ -130,7 +131,7 @@ class SegmentationModel:
             **optimizer_kwargs,
         )
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
-            self.optimizer, gamma=1.0
+            self.optimizer, gamma=0.9
         )
 
     def train_loop(self):
@@ -155,7 +156,11 @@ class SegmentationModel:
 
         self.scheduler.step()
 
-        return epoch_loss / len(self.train_dataloader)
+        avg_epoch_loss = epoch_loss / len(self.train_dataloader)
+
+        print(f"avg loss: {avg_epoch_loss}")
+
+        return avg_epoch_loss
 
     @torch.no_grad
     def test_loop(self, epoch=int):
@@ -218,9 +223,14 @@ class SegmentationModel:
             valid_errors.append(valid_loss)
 
             if t % 5 == 0:
+                ax.clear()
                 ax.scatter(epochs, train_errors, color="b")
                 ax.scatter(epochs, valid_errors, color="r")
                 fig.savefig(self.logs_path / f"loss_{str(t)}.png")
-                epochs = []
-                train_errors = []
-                valid_errors = []
+        ax.clear()
+        ax.set_yscale("log")
+        ax.set_xlabel("epoch")
+        ax.set_ylabel("cross entropy loss (log)")
+        ax.scatter(epochs, train_errors, color="b")
+        ax.scatter(epochs, valid_errors, color="r")
+        fig.savefig(self.logs_path / f"loss.png")

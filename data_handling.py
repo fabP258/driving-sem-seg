@@ -2,7 +2,6 @@ from torch.utils.data import Dataset
 from typing import Union, Set
 from pathlib import Path
 from PIL import Image
-import albumentations as alb
 import torch
 import numpy as np
 from os import listdir

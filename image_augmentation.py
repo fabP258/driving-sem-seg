@@ -39,3 +39,32 @@ class NoImageAugmentor(ImageAugmentor):
 
     def add_transforms(self):
         return
+
+
+class LightImageAugmentations(ImageAugmentor):
+    def __init__(self):
+        super().__init__()
+
+    def add_transforms(self):
+        self._augmentations.append(alb.HorizontalFlip(p=0.5))
+        self._augmentations.append(alb.GaussNoise(var_limit=(10.0, 20.0), p=0.2))
+        self._augmentations.append(
+            alb.OneOf(
+                [
+                    alb.CLAHE(p=1.0),
+                    alb.RandomBrightnessContrast(p=1.0),
+                    alb.RandomGamma(p=1.0),
+                ],
+                p=0.5,
+            )
+        )
+        self._augmentations.append(
+            alb.OneOf(
+                [
+                    alb.Sharpen(p=1.0),
+                    alb.Blur(blur_limit=3, p=1.0),
+                    alb.MotionBlur(blur_limit=3, p=1.0),
+                ],
+                p=0.5,
+            )
+        )
